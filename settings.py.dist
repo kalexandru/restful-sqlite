@@ -1,0 +1,9 @@
+
+# Port to listen on for HTTP connections
+port=8888
+
+# Path to sqlite databases
+data_path='/home/chooper/rest2sql/data/'
+
+# Cookie secret
+cookie_secret='abcd'

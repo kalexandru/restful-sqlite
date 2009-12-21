@@ -1,0 +1,10 @@
+syntax:glob
+*.pyc
+*.pyo
+*.data
+*.tar.gz
+tornado*
+*.sqlite
+data/*
+settings.py
+
