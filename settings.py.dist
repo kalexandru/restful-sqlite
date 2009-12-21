@@ -3,7 +3,7 @@
 port=8888
 
 # Path to sqlite databases
-data_path='/home/chooper/rest2sql/data/'
+data_path='~/data/'
 
 # Cookie secret
-cookie_secret='abcd'
+cookie_secret='You should really change this'
