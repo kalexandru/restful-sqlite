@@ -44,7 +44,7 @@ def dump_data(database,table):
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     # TODO: santize 'table' for SQL injection
-    cursor.execute("SELECT * FROM `%s`" % table)
+    cursor.execute("SELECT ROWID,* FROM `%s`" % table)
     for row in cursor:
         yield row
     cursor.close()
