@@ -105,7 +105,7 @@ class DataHandler(tornado.web.RequestHandler):
             self.write(dumps([row for row in dump_data(database,table)]))
 
     def post(self,database,table,rowid=None):
-        """INSERT or UPDATE records"""
+        """INSERT records"""
         if rowid:
             raise HTTPError(405) # Method Not Implemented
         else:
