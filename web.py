@@ -43,10 +43,23 @@ def dump_data(database,table):
     """Dump all records in a table"""
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
+
     # TODO: santize 'table' for SQL injection
     cursor.execute("SELECT ROWID,* FROM `%s`" % table)
     for row in cursor:
         yield row
+    cursor.close()
+    conn.close()
+
+
+def get_record(database,table,rowid):
+    """Dump all records in a table"""
+    conn = connect(path.join(settings.data_path,database))
+    cursor = conn.cursor()
+    # TODO: santize 'table' for SQL injection
+    cursor.execute("SELECT ROWID,* FROM `%s` WHERE rowid=?" % table,
+        rowid)
+    return cursor.fetchone()
     cursor.close()
     conn.close()
 
@@ -68,14 +81,17 @@ class ListTableHandler(tornado.web.RequestHandler):
 class DataHandler(tornado.web.RequestHandler):
     """Dump all records from a table"""
 
-    def get(self,database,table):
-        self.write(json.dumps([row for row in dump_data(database,table)]))
+    def get(self,database,table,rowid=None):
+        if rowid:
+            self.write(json.dumps(get_record(database,table,rowid)))
+        else:
+            self.write(json.dumps([row for row in dump_data(database,table)]))
 
 
 application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/([\w_\-\.]+)/", ListTableHandler),
-    (r"/([\w_\-\.]+)/([\w]+)/", DataHandler),
+    (r"/([\w_\-\.]+)/([\w]+)/([\d]+)?", DataHandler),
 ],
     cookie_secret=settings.cookie_secret,
 )
