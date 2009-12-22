@@ -13,6 +13,8 @@ from tornado.escape import json_decode as loads
 
 import settings
 
+# Major TODO: Handle exceptions for all SQL operations
+
 def list_databases():
     """List all databases"""
     return listdir(settings.data_path)
