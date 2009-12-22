@@ -8,6 +8,17 @@ import tornado.auth
 from os import listdir,path
 from sqlite3 import connect
 
+try:
+    import simplejson as json
+except ImportError:
+    try:
+        import json  # Python 2.6+
+    except ImportError:
+        try:
+            from django.utils import simplejson as json  # Google App Engine
+        except ImportError:
+            raise ImportError, "Can't load a json library"
+
 import settings
 
 def list_databases():
@@ -44,21 +55,21 @@ class MainHandler(tornado.web.RequestHandler):
     """Main Handler... list all databases"""
 
     def get(self):
-        self.write(repr(list_databases()))
+        self.write(json.dumps(list_databases()))
 
 
 class ListTableHandler(tornado.web.RequestHandler):
     """List tables in specified database"""
 
     def get(self,database):
-        self.write(repr(list_tables(database)))
+        self.write(json.dumps(list_tables(database)))
 
 
 class DataHandler(tornado.web.RequestHandler):
     """Dump all records from a table"""
 
     def get(self,database,table):
-        self.write(repr([row for row in dump_data(database,table)]))
+        self.write(json.dumps([row for row in dump_data(database,table)]))
 
 
 application = tornado.web.Application([
