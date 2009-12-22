@@ -74,8 +74,8 @@ class DataHandler(tornado.web.RequestHandler):
 
 application = tornado.web.Application([
     (r"/", MainHandler),
-    (r"/([\w]+)/", ListTableHandler),
-    (r"/([\w]+)/([\w]+)/", DataHandler),
+    (r"/([\w_\-\.]+)/", ListTableHandler),
+    (r"/([\w_\-\.]+)/([\w]+)/", DataHandler),
 ],
     cookie_secret=settings.cookie_secret,
 )
