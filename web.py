@@ -5,19 +5,18 @@ import tornado.ioloop
 import tornado.web
 import tornado.auth
 
+from os import listdir,path
 from sqlite3 import connect
 
 import settings
 
 def list_databases():
     """List all databases"""
-    from os import listdir
     return listdir(settings.data_path)
 
 
 def list_tables(database):
     """List all tables"""
-    from os import path
     # TODO: Sanitize 'database' var for directory traversal
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
@@ -31,7 +30,6 @@ def list_tables(database):
 
 def dump_data(database,table):
     """Dump all records in a table"""
-    from os import path
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     # TODO: santize 'table' for SQL injection
