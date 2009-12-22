@@ -33,8 +33,8 @@ def list_tables(database):
     return tables
 
 
-def dump_data(database,table):
-    """Dump all records in a table"""
+def all_records(database,table):
+    """Return all records in a given table - Generator function"""
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
 
@@ -47,7 +47,7 @@ def dump_data(database,table):
 
 
 def get_record(database,table,rowid):
-    """Dump all records in a table"""
+    """Return record in a given table based on ROWID"""
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     # TODO: santize 'table' for SQL injection
@@ -102,7 +102,7 @@ class DataHandler(tornado.web.RequestHandler):
         if rowid:
             self.write(dumps(get_record(database,table,rowid)))
         else:
-            self.write(dumps([row for row in dump_data(database,table)]))
+            self.write(dumps([row for row in all_records(database,table)]))
 
     def post(self,database,table,rowid=None):
         """INSERT records"""
