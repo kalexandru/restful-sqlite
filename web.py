@@ -36,10 +36,10 @@ def dump_data(database,table):
     cursor = conn.cursor()
     # TODO: santize 'table' for SQL injection
     cursor.execute("SELECT * FROM `%s`" % table)
-    data = [row for row in cursor]
+    for row in cursor:
+        yield row
     cursor.close()
     conn.close()
-    return data
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -60,7 +60,7 @@ class DataHandler(tornado.web.RequestHandler):
     """Dump all records from a table"""
 
     def get(self,database,table):
-        self.write(repr(dump_data(database,table)))
+        self.write(repr([row for row in dump_data(database,table)]))
 
 
 application = tornado.web.Application([
