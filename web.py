@@ -51,9 +51,33 @@ def get_record(database,table,rowid):
     # TODO: santize 'table' for SQL injection
     cursor.execute("SELECT ROWID,* FROM `%s` WHERE rowid=?" % table,
         rowid)
-    return cursor.fetchone()
+    record = cursor.fetchone()
     cursor.close()
     conn.close()
+    return record
+
+
+def insert_record(database,table,**kwargs):
+    """INSERT new records into a database and return ROWID"""
+
+    if not kwargs:
+        return  # Can't INSERT data if we don't have it
+
+    # Build SQL INSERT statement
+    # TODO: Escape single-quotes, etc
+    columns = ','.join(['`%s`' % str(var) for var in kwargs.iterkeys()])
+    values = ','.join(["'%s'" % str(val) for val in kwargs.itervalues()])
+    statement = "INSERT INTO `%s` (%s) VALUES (%s)" % (table,columns,values)
+
+    # Connect to database and return new record's ID
+    conn = connect(path.join(settings.data_path,database))
+    cursor = conn.cursor()
+    cursor.execute(statement)
+    record_id = cursor.lastrowid
+    cursor.close()
+    conn.commit()
+    conn.close()
+    return record_id
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -71,13 +95,27 @@ class ListTableHandler(tornado.web.RequestHandler):
 
 
 class DataHandler(tornado.web.RequestHandler):
-    """Dump all records from a table"""
-
     def get(self,database,table,rowid=None):
+        """Dump all records from a table"""
         if rowid:
             self.write(dumps(get_record(database,table,rowid)))
         else:
             self.write(dumps([row for row in dump_data(database,table)]))
+
+    def post(self,database,table,rowid=None):
+        """INSERT or UPDATE records"""
+        if rowid:
+            pass # Perform UPDATE
+        else:
+            # Perform INSERT
+
+            # Prepare request (POST) vars for insert_record. We only have to do this
+            # because we get a dict of lists and insert_record wants a dict of
+            # single values
+            kwargs = {}
+            for k,v in self.request.arguments.iteritems():
+                kwargs[k] = v[0] 
+            self.write(dumps(insert_record(database,table,**kwargs)))
 
 
 application = tornado.web.Application([
