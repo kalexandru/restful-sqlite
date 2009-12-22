@@ -7,4 +7,5 @@ tornado*
 *.sqlite
 data/*
 settings.py
+*.orig
 
