@@ -8,4 +8,5 @@ tornado*
 data/*
 settings.py
 *.orig
+test-scripts/
 
