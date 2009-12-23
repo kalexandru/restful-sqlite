@@ -139,6 +139,17 @@ def update_record(database,table,rowid,**kwargs):
     conn.close()
 
 
+def delete_record(database,table,rowid):
+    """DELETE record with given ROWID"""
+
+    # Connect to database and delete record
+    conn = connect(path.join(settings.data_path,database))
+    cursor = conn.cursor()
+    cursor.execute("""DELETE FROM `%s` WHERE ROWID=?""" % table, rowid)
+    cursor.close()
+    conn.commit()
+    conn.close()
+
 class MainHandler(tornado.web.RequestHandler):
     """Main Handler... list all databases"""
 
@@ -185,6 +196,15 @@ class DataHandler(tornado.web.RequestHandler):
 
         obj = loads(self.request.body)
         replace_record(database,table,rowid,obj)
+
+    def delete(self,database,table,rowid=None):
+        """DELETE record"""
+
+        if not rowid:
+            raise HTTPError(405) # Need ROWID
+
+        delete_record(database,table,rowid)
+
 
 application = tornado.web.Application([
     (r"/", MainHandler),
