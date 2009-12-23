@@ -6,7 +6,7 @@ import tornado.web
 import tornado.auth
 
 from os import listdir,path
-from sqlite3 import connect
+from sqlite3 import connect,Row
 
 from tornado.escape import json_encode as dumps
 from tornado.escape import json_decode as loads
@@ -31,6 +31,20 @@ def list_tables(database):
     cursor.close()
     conn.close()
     return tables
+
+
+def list_columns(database,table):
+    """List columns in a given table"""
+
+    conn = connect(path.join(settings.data_path,database))
+    conn.row_factory = Row
+    cursor = conn.cursor()
+    cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % table)
+    c = cursor.fetchone()
+    columns = c.keys()
+    cursor.close()
+    conn.close()
+    return columns
 
 
 def all_records(database,table):
@@ -80,6 +94,28 @@ def insert_record(database,table,**kwargs):
     conn.commit()
     conn.close()
     return record_id
+
+
+def replace_record(database,table,rowid,seq):
+    """REPLACE entire records"""
+
+    if not seq:
+        return
+
+    # Build SQL REPLACE statement
+    # TODO: Escape single-quotes, etc
+    columns = ','.join(["`%s`" % str(col) for col in list_columns(database,table)])
+    values = ','.join(["'%s'" % str(val) for val in seq])
+    statement = "REPLACE INTO `%s` (ROWID,%s) VALUES (%s,%s)" % (
+        table,columns,str(rowid),values)
+
+    # Connect to database and return new record's ID
+    conn = connect(path.join(settings.data_path,database))
+    cursor = conn.cursor()
+    cursor.execute(statement)
+    cursor.close()
+    conn.commit()
+    conn.close()
 
 
 def update_record(database,table,rowid,**kwargs):
@@ -141,6 +177,14 @@ class DataHandler(tornado.web.RequestHandler):
             # Perform INSERT
             self.write(dumps(insert_record(database,table,**kwargs)))
 
+    def put(self,database,table,rowid=None):
+        """REPLACE record"""
+
+        if not rowid:
+            raise HTTPError(405) # We need a rowid to use REPLACE
+
+        obj = loads(self.request.body)
+        replace_record(database,table,rowid,obj)
 
 application = tornado.web.Application([
     (r"/", MainHandler),
