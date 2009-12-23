@@ -82,6 +82,27 @@ def insert_record(database,table,**kwargs):
     return record_id
 
 
+def update_record(database,table,rowid,**kwargs):
+    """UPDATE existing records"""
+
+    if not kwargs:
+        return
+
+    # Build SQL UPDATE statement
+    # TODO: Escaping, etc
+    vals = ','.join(["`%s`='%s'" % (str(k), str(v))
+        for k,v, in kwargs.iteritems()])
+    statement = "UPDATE `%s` SET %s WHERE ROWID='%s'" % (table,vals,rowid)
+
+    # Connect to database and return new record's ID
+    conn = connect(path.join(settings.data_path,database))
+    cursor = conn.cursor()
+    cursor.execute(statement)
+    cursor.close()
+    conn.commit()
+    conn.close()
+
+
 class MainHandler(tornado.web.RequestHandler):
     """Main Handler... list all databases"""
 
@@ -98,25 +119,26 @@ class ListTableHandler(tornado.web.RequestHandler):
 
 class DataHandler(tornado.web.RequestHandler):
     def get(self,database,table,rowid=None):
-        """Dump all records from a table"""
+        """Dumps a single record or all records from a table"""
         if rowid:
             self.write(dumps(get_record(database,table,rowid)))
         else:
             self.write(dumps([row for row in all_records(database,table)]))
 
     def post(self,database,table,rowid=None):
-        """INSERT records"""
+        """INSERT or UPDATE records"""
+        # Prepare request (POST) vars. We only have to do this because
+        # we get a dict of lists and our funcs want a dict of single
+        # values
+        kwargs = {}
+        for k,v in self.request.arguments.iteritems():
+            kwargs[k] = v[0] 
+
         if rowid:
-            raise HTTPError(405) # Method Not Implemented
+            # Perform UPDATE
+            self.write(dumps(update_record(database,table,rowid,**kwargs)))
         else:
             # Perform INSERT
-
-            # Prepare request (POST) vars for insert_record. We only have to do this
-            # because we get a dict of lists and insert_record wants a dict of
-            # single values
-            kwargs = {}
-            for k,v in self.request.arguments.iteritems():
-                kwargs[k] = v[0] 
             self.write(dumps(insert_record(database,table,**kwargs)))
 
 
