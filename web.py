@@ -74,21 +74,21 @@ def get_record(database,table,rowid):
 
 
 def insert_record(database,table,**kwargs):
-    """INSERT new records into a database and return ROWID"""
+    """INSERT new record into a database and return ROWID"""
 
     if not kwargs:
         return  # Can't INSERT data if we don't have it
 
     # Build SQL INSERT statement
-    # TODO: Escape single-quotes, etc
+    # TODO: Escape backticks, etc
     columns = ','.join(['`%s`' % str(var) for var in kwargs.iterkeys()])
-    values = ','.join(["'%s'" % str(val) for val in kwargs.itervalues()])
-    statement = "INSERT INTO `%s` (%s) VALUES (%s)" % (table,columns,values)
+    statement = 'INSERT INTO `%s` (%s) VALUES (' % (table,columns)
+    statement += ','.join(['?']*len(kwargs.keys())) + ')'
 
     # Connect to database and return new record's ID
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    cursor.execute(statement)
+    cursor.execute(statement, tuple([val for val in kwargs.itervalues()]))
     record_id = cursor.lastrowid
     cursor.close()
     conn.commit()
