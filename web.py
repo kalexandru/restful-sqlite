@@ -58,9 +58,15 @@ class DataHandler(tornado.web.RequestHandler):
                 # Perform UPDATE
                 json = dumps(db.update_record(database,table,rowid,**kwargs))
                 self.write(json)
+
             else:
                 # Perform INSERT
-                self.write(dumps(db.insert_record(database,table,**kwargs)))
+                id = db.insert_record(database,table,**kwargs)
+                self.set_status = 201   # HTTP 201 Created
+                loc = '/%s/%s/%d' % (database,table,id)
+                self.set_header('Location', loc)
+                self.write(loc)
+
         except db.NoSuchDatabase:
             raise HTTPError(404)
         
