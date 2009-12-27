@@ -1,16 +1,25 @@
 #!/usr/bin/env python
 
-from os import listdir,path
+from os import listdir,path,access,F_OK
 from sqlite3 import connect,Row
 
 import settings
 
 # Major TODO: Handle exceptions for all SQL operations
 
+class NoSuchDatabase(Exception):
+    pass
+
+
 def _sanitize(name):
     """Filter SQL column and table names"""
-
     return str(name).replace('`', '\`')
+
+
+def _connect(database):
+    if not access(database,F_OK):
+        raise NoSuchDatabase
+    return connect(database)
 
 
 def list_databases():
@@ -21,7 +30,7 @@ def list_databases():
 def list_tables(database):
     """List all tables"""
     # TODO: Sanitize 'database' var for directory traversal
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute("""SELECT name FROM sqlite_master WHERE type='table'
         ORDER BY name""")
@@ -34,7 +43,7 @@ def list_tables(database):
 def list_columns(database,table):
     """List columns in a given table"""
 
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     conn.row_factory = Row
     cursor = conn.cursor()
     cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % _sanitize(table))
@@ -47,7 +56,7 @@ def list_columns(database,table):
 
 def all_records(database,table):
     """Return all records in a given table - Generator function"""
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
 
     cursor.execute("SELECT ROWID,* FROM `%s`" % _sanitize(table))
@@ -59,7 +68,7 @@ def all_records(database,table):
 
 def get_record(database,table,rowid):
     """Return record in a given table based on ROWID"""
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute("SELECT ROWID,* FROM `%s` WHERE rowid=?" %
         _sanitize(table), rowid)
@@ -83,7 +92,7 @@ def insert_record(database,table,**kwargs):
     statement += ','.join(['?']*len(kwargs.keys())) + ')'
 
     # Connect to database and return new record's ID
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute(statement, tuple([val for val in kwargs.itervalues()]))
     record_id = cursor.lastrowid
@@ -108,7 +117,7 @@ def replace_record(database,table,rowid,seq):
         _sanitize(table),columns,str(rowid),values)
 
     # Connect to database and return new record's ID
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute(statement)
     cursor.close()
@@ -129,7 +138,7 @@ def update_record(database,table,rowid,**kwargs):
         _sanitize(table),vals)
 
     # Connect to database and return new record's ID
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute(statement,rowid)
     cursor.close()
@@ -141,7 +150,7 @@ def delete_record(database,table,rowid):
     """DELETE record with given ROWID"""
 
     # Connect to database and delete record
-    conn = connect(path.join(settings.data_path,database))
+    conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute("""DELETE FROM `%s` WHERE ROWID=?""" %
         _sanitize(table), rowid)

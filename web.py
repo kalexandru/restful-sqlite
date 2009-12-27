@@ -4,6 +4,7 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.auth
+from tornado.web import HTTPError
 
 from tornado.escape import json_encode as dumps
 from tornado.escape import json_decode as loads
@@ -25,16 +26,23 @@ class ListTableHandler(tornado.web.RequestHandler):
     """List tables in specified database"""
 
     def get(self,database):
-        self.write(dumps(db.list_tables(database)))
+        try:
+            self.write(dumps(db.list_tables(database)))
+        except db.NoSuchDatabase:
+            raise HTTPError(404)
 
 
 class DataHandler(tornado.web.RequestHandler):
     def get(self,database,table,rowid=None):
         """Dumps a single record or all records from a table"""
-        if rowid:
-            self.write(dumps(db.get_record(database,table,rowid)))
-        else:
-            self.write(dumps([row for row in db.all_records(database,table)]))
+        try:
+            if rowid:
+                self.write(dumps(db.get_record(database,table,rowid)))
+            else:
+                self.write(dumps([row
+                    for row in db.all_records(database,table)]))
+        except db.NoSuchDatabase:
+            raise HTTPError(404)
 
     def post(self,database,table,rowid=None):
         """INSERT or UPDATE records"""
@@ -45,12 +53,17 @@ class DataHandler(tornado.web.RequestHandler):
         for k,v in self.request.arguments.iteritems():
             kwargs[k] = v[0] 
 
-        if rowid:
-            # Perform UPDATE
-            self.write(dumps(db.update_record(database,table,rowid,**kwargs)))
-        else:
-            # Perform INSERT
-            self.write(dumps(db.insert_record(database,table,**kwargs)))
+        try:
+            if rowid:
+                # Perform UPDATE
+                json = dumps(db.update_record(database,table,rowid,**kwargs))
+                self.write(json)
+            else:
+                # Perform INSERT
+                self.write(dumps(db.insert_record(database,table,**kwargs)))
+        except db.NoSuchDatabase:
+            raise HTTPError(404)
+        
 
     def put(self,database,table,rowid=None):
         """REPLACE record"""
@@ -59,7 +72,10 @@ class DataHandler(tornado.web.RequestHandler):
             raise HTTPError(405) # We need a rowid to use REPLACE
 
         obj = loads(self.request.body)
-        db.replace_record(database,table,rowid,obj)
+        try:
+            db.replace_record(database,table,rowid,obj)
+        except db.NoSuchDatabase:
+            raise HTTPError(404)
 
     def delete(self,database,table,rowid=None):
         """DELETE record"""
@@ -67,7 +83,10 @@ class DataHandler(tornado.web.RequestHandler):
         if not rowid:
             raise HTTPError(405) # Need ROWID
 
-        db.delete_record(database,table,rowid)
+        try:
+            db.delete_record(database,table,rowid)
+        except db.NoSuchDatabase:
+            raise HTTPError(404)
 
 
 application = tornado.web.Application([
