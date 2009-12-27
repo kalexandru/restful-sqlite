@@ -16,8 +16,8 @@ def _sanitize(name):
     return str(name).replace('`', '\`')
 
 
-def _connect(database):
-    if not access(database,F_OK):
+def _connect(database,create=False):
+    if create is False and not access(database,F_OK):
         raise NoSuchDatabase
     return connect(database)
 
