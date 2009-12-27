@@ -70,8 +70,8 @@ def get_record(database,table,rowid):
     """Return record in a given table based on ROWID"""
     conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    cursor.execute("SELECT ROWID,* FROM `%s` WHERE rowid=?" %
-        _sanitize(table), rowid)
+    cursor.execute("SELECT ROWID,* FROM `%s` WHERE ROWID=?" % (
+        _sanitize(table)), (rowid,))
     record = cursor.fetchone()
     cursor.close()
     conn.close()
