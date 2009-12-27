@@ -34,7 +34,7 @@ def list_tables(database):
     cursor = conn.cursor()
     cursor.execute("""SELECT name FROM sqlite_master WHERE type='table'
         ORDER BY name""")
-    tables = [table for table in cursor]
+    tables = [table[0] for table in cursor]
     cursor.close()
     conn.close()
     return tables
