@@ -7,6 +7,12 @@ import settings
 
 # Major TODO: Handle exceptions for all SQL operations
 
+def _sanitize(name):
+    """Filter SQL column and table names"""
+
+    return str(name).replace('`', '\`')
+
+
 def list_databases():
     """List all databases"""
     return listdir(settings.data_path)
@@ -31,7 +37,7 @@ def list_columns(database,table):
     conn = connect(path.join(settings.data_path,database))
     conn.row_factory = Row
     cursor = conn.cursor()
-    cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % table)
+    cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % _sanitize(table))
     c = cursor.fetchone()
     columns = c.keys()
     cursor.close()
@@ -44,8 +50,7 @@ def all_records(database,table):
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
 
-    # TODO: santize 'table' for SQL injection
-    cursor.execute("SELECT ROWID,* FROM `%s`" % table)
+    cursor.execute("SELECT ROWID,* FROM `%s`" % _sanitize(table))
     for row in cursor:
         yield row
     cursor.close()
@@ -56,9 +61,8 @@ def get_record(database,table,rowid):
     """Return record in a given table based on ROWID"""
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    # TODO: santize 'table' for SQL injection
-    cursor.execute("SELECT ROWID,* FROM `%s` WHERE rowid=?" % table,
-        rowid)
+    cursor.execute("SELECT ROWID,* FROM `%s` WHERE rowid=?" %
+        _sanitize(table), rowid)
     record = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -72,9 +76,10 @@ def insert_record(database,table,**kwargs):
         return  # Can't INSERT data if we don't have it
 
     # Build SQL INSERT statement
-    # TODO: Escape backticks, etc
-    columns = ','.join(['`%s`' % str(var) for var in kwargs.iterkeys()])
-    statement = 'INSERT INTO `%s` (%s) VALUES (' % (table,columns)
+    columns = ','.join(['`%s`' % _sanitize(var)
+        for var in kwargs.iterkeys()])
+    statement = 'INSERT INTO `%s` (%s) VALUES (' % (
+        _sanitize(table),columns)
     statement += ','.join(['?']*len(kwargs.keys())) + ')'
 
     # Connect to database and return new record's ID
@@ -96,10 +101,11 @@ def replace_record(database,table,rowid,seq):
 
     # Build SQL REPLACE statement
     # TODO: Escape single-quotes, etc
-    columns = ','.join(["`%s`" % str(col) for col in list_columns(database,table)])
+    columns = ','.join(["`%s`" % _sanitize(col)
+        for col in list_columns(database,table)])
     values = ','.join(["'%s'" % str(val) for val in seq])
     statement = "REPLACE INTO `%s` (ROWID,%s) VALUES (%s,%s)" % (
-        table,columns,str(rowid),values)
+        _sanitize(table),columns,str(rowid),values)
 
     # Connect to database and return new record's ID
     conn = connect(path.join(settings.data_path,database))
@@ -117,15 +123,15 @@ def update_record(database,table,rowid,**kwargs):
         return
 
     # Build SQL UPDATE statement
-    # TODO: Escaping, etc
-    vals = ','.join(["`%s`='%s'" % (str(k), str(v))
+    vals = ','.join(["`%s`='%s'" % (_sanitize(k), str(v))
         for k,v, in kwargs.iteritems()])
-    statement = "UPDATE `%s` SET %s WHERE ROWID='%s'" % (table,vals,rowid)
+    statement = "UPDATE `%s` SET %s WHERE ROWID=?" % (
+        _sanitize(table),vals)
 
     # Connect to database and return new record's ID
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    cursor.execute(statement)
+    cursor.execute(statement,rowid)
     cursor.close()
     conn.commit()
     conn.close()
@@ -137,7 +143,8 @@ def delete_record(database,table,rowid):
     # Connect to database and delete record
     conn = connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    cursor.execute("""DELETE FROM `%s` WHERE ROWID=?""" % table, rowid)
+    cursor.execute("""DELETE FROM `%s` WHERE ROWID=?""" %
+        _sanitize(table), rowid)
     cursor.close()
     conn.commit()
     conn.close()
