@@ -23,7 +23,9 @@ def _sanitize(name):
 def _connect(database,create=False):
     if create is False and not access(database,F_OK):
         raise NoSuchDatabase
-    return connect(database)
+    conn = connect(database)
+    conn.row_factory = Row
+    return conn
 
 
 def list_databases():
@@ -65,7 +67,7 @@ def all_records(database,table):
 
     cursor.execute("SELECT ROWID,* FROM `%s`" % _sanitize(table))
     for row in cursor:
-        yield row
+        yield dict(row)
     cursor.close()
     conn.close()
 
@@ -79,7 +81,7 @@ def get_record(database,table,rowid):
     record = cursor.fetchone()
     cursor.close()
     conn.close()
-    return record
+    return dict(record) if record is not None else None
 
 
 def insert_record(database,table,**kwargs):
