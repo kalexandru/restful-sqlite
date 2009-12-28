@@ -49,8 +49,6 @@ def list_columns(database,table):
 
     conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    #cursor.execute("""SELECT name FROM SQLITE_MASTER WHERE
-    #    tbl_name=?""", (table,) )
     cursor.execute("PRAGMA table_info(`%s`)" % _sanitize(table))
     columns = [col[1] for col in cursor]
     cursor.close()
