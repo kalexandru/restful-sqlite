@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os import listdir,path,access,F_OK
-from sqlite3 import connect,Row
+from sqlite3 import connect,Row,OperationalError
 
 import settings
 
@@ -9,6 +9,10 @@ import settings
 
 class NoSuchDatabase(Exception):
     pass
+
+
+class NoSuchTable(Exception):
+        pass
 
 
 def _sanitize(name):
@@ -46,7 +50,11 @@ def list_columns(database,table):
     conn = _connect(path.join(settings.data_path,database))
     conn.row_factory = Row
     cursor = conn.cursor()
-    cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % _sanitize(table))
+    try:
+        cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % _sanitize(table))
+    except OperationalError:
+        raise NoSuchTable
+        return
     c = cursor.fetchone()
     columns = c.keys()
     cursor.close()
