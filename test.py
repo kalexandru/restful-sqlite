@@ -14,6 +14,8 @@ TEST_TABLE = 'testtbl'
 TEST_TABLESQL = """CREATE TABLE `%s` (col1 INT, col2 TEXT)""" % TEST_TABLE
 
 class TestDBConnect(unittest.TestCase):
+    """Test DB connect and create funcs"""
+
     def setUp(self):
         mkdir(TEST_DIR)
 
@@ -34,6 +36,8 @@ class TestDBConnect(unittest.TestCase):
 
 
 class TestDBReadFuncs(unittest.TestCase):
+    """Test DB read-only funcs"""
+
     def setUp(self):
         mkdir(TEST_DIR)
         db.settings.data_path = TEST_DIR
@@ -53,6 +57,18 @@ class TestDBReadFuncs(unittest.TestCase):
         res = db.list_tables(TEST_DB)
         self.assertEqual(res, [TEST_TABLE],
             'list_tables should only include TEST_TABLE at this stage')
+
+    def test_list_columns(self):
+        self.assertRaises(db.NoSuchTable, db.list_columns, TEST_DB, TEST_TABLE)
+
+        self.conn.execute(TEST_TABLESQL)
+        expected_result = ['col1','col2']
+        res = db.list_columns(TEST_DB,TEST_TABLE)
+        self.assertEqual(res, expected_result,
+            '''Incorrect value returned from list_columns
+                expected: %s
+                got: %s''' % (repr(expected_result), repr(res)))
+
 
     def test_all_records(self):
         self.conn.execute(TEST_TABLESQL)
