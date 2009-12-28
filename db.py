@@ -48,17 +48,15 @@ def list_columns(database,table):
     """List columns in a given table"""
 
     conn = _connect(path.join(settings.data_path,database))
-    conn.row_factory = Row
     cursor = conn.cursor()
-    try:
-        cursor.execute("""SELECT * FROM `%s` LIMIT 1""" % _sanitize(table))
-    except OperationalError:
-        raise NoSuchTable
-        return
-    c = cursor.fetchone()
-    columns = c.keys()
+    #cursor.execute("""SELECT name FROM SQLITE_MASTER WHERE
+    #    tbl_name=?""", (table,) )
+    cursor.execute("PRAGMA table_info(`%s`)" % _sanitize(table))
+    columns = [col[1] for col in cursor]
     cursor.close()
     conn.close()
+    if not columns:
+        raise NoSuchTable
     return columns
 
 
