@@ -86,7 +86,6 @@ class TestDBReadFuncs(unittest.TestCase):
                 expected: %s
                 got: %s''' % (repr(expected_result), repr(res)))
 
-        
     def tearDown(self):
         self.conn.close()
         if access(path.join(TEST_DIR,TEST_DB),F_OK):
