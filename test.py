@@ -78,7 +78,7 @@ class TestDBReadFuncs(unittest.TestCase):
         expected_set = []
         for i in range(10):
             num = randint(0,99)
-            expected_set.append( (num, 'TEST%d' % num) )
+            expected_set.append({'rowid':num, 'col1':num, 'col2':'TEST%d' % num})
             self.conn.execute("""INSERT INTO `%s` VALUES (?,?)""" % TEST_TABLE,
                 (num, 'TEST%d' % num))
 
@@ -91,7 +91,7 @@ class TestDBReadFuncs(unittest.TestCase):
         self.assertEqual(res, None)
 
         num = randint(0,99)
-        expected_result = (1, num, 'TEST%d' % num)
+        expected_result = {'rowid': 1, 'col1':num, 'col2':'TEST%d' % num}
         self.conn.execute("""INSERT INTO `%s` (ROWID,col1,col2)
             VALUES (1,?,?)""" % TEST_TABLE, (num, 'TEST%d' % num))
         self.conn.commit()
@@ -125,7 +125,7 @@ class TestDBWriteFuncs(unittest.TestCase):
         id = db.insert_record(TEST_DB,TEST_TABLE,col1=123,col2='abc')
         res = db.get_record(TEST_DB,TEST_TABLE,1)
         self.assertNotEqual(id, None)
-        self.assertEqual(res, (id,123,'abc'))
+        self.assertEqual(res, {'rowid':id,'col1':123,'col2':'abc'})
 
     def test_update_record(self):
         # TODO: define behavior for when a record does not exist
@@ -133,11 +133,11 @@ class TestDBWriteFuncs(unittest.TestCase):
 
         db.update_record(TEST_DB,TEST_TABLE,999,col2='def')
         res = db.get_record(TEST_DB,TEST_TABLE,id)
-        self.assertEqual(res, (id, 123,'abc'))
+        self.assertEqual(res, {'rowid':id,'col1':123,'col2':'abc'})
 
         db.update_record(TEST_DB,TEST_TABLE,id,col2='def')
         res = db.get_record(TEST_DB,TEST_TABLE,1)
-        self.assertEqual(res, (id, 123,'def'))
+        self.assertEqual(res, {'rowid':id,'col1':123,'col2':'def'})
         
     def tearDown(self):
         if self.conn:
