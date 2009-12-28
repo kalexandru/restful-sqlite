@@ -118,16 +118,31 @@ class TestDBWriteFuncs(unittest.TestCase):
         db.settings.data_path = TEST_DIR
         self.conn = db._connect(path.join(TEST_DIR,TEST_DB),True)
         self.conn.execute(TEST_TABLESQL)
+        self.conn.close()
+        self.conn = None
 
     def test_insert_record(self):
-        db.insert_record(TEST_DB,TEST_TABLE,col1=123,col2='abc')
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM `%s`" % TEST_TABLE)
-        res = c.fetchone()
-        self.assertEqual(res, (123,'abc'))
+        id = db.insert_record(TEST_DB,TEST_TABLE,col1=123,col2='abc')
+        res = db.get_record(TEST_DB,TEST_TABLE,1)
+        self.assertNotEqual(id, None)
+        self.assertEqual(res, (id,123,'abc'))
 
+    def test_update_record(self):
+        # TODO: define behavior for when a record does not exist
+        id = db.insert_record(TEST_DB,TEST_TABLE,col1=123,col2='abc')
+
+        db.update_record(TEST_DB,TEST_TABLE,999,col2='def')
+        res = db.get_record(TEST_DB,TEST_TABLE,id)
+        self.assertEqual(res, (id, 123,'abc'))
+
+        db.update_record(TEST_DB,TEST_TABLE,id,col2='def')
+        res = db.get_record(TEST_DB,TEST_TABLE,1)
+        self.assertEqual(res, (id, 123,'def'))
+        
     def tearDown(self):
-        self.conn.close()
+        if self.conn:
+            self.conn.close()
+
         if access(path.join(TEST_DIR,TEST_DB),F_OK):
             unlink(path.join(TEST_DIR,TEST_DB))
 
