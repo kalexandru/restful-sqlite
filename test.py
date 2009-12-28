@@ -69,7 +69,6 @@ class TestDBReadFuncs(unittest.TestCase):
                 expected: %s
                 got: %s''' % (repr(expected_result), repr(res)))
 
-
     def test_all_records(self):
         self.conn.execute(TEST_TABLESQL)
         res = [rec for rec in db.all_records(TEST_DB,TEST_TABLE)]
@@ -80,7 +79,7 @@ class TestDBReadFuncs(unittest.TestCase):
         for i in range(10):
             num = randint(0,99)
             expected_set.append( (num, 'TEST%d' % num) )
-            self.conn.execute("""INSERT INTO `%s` VALUES (?, ?)""" % TEST_TABLE,
+            self.conn.execute("""INSERT INTO `%s` VALUES (?,?)""" % TEST_TABLE,
                 (num, 'TEST%d' % num))
 
         for record in db.all_records(TEST_DB, TEST_TABLE):
@@ -101,6 +100,31 @@ class TestDBReadFuncs(unittest.TestCase):
             '''get_record did not return expected result.
                 expected: %s
                 got: %s''' % (repr(expected_result), repr(res)))
+
+    def tearDown(self):
+        self.conn.close()
+        if access(path.join(TEST_DIR,TEST_DB),F_OK):
+            unlink(path.join(TEST_DIR,TEST_DB))
+
+        if access(TEST_DIR,F_OK):
+            removedirs(TEST_DIR)
+
+
+class TestDBWriteFuncs(unittest.TestCase):
+    """Test 'write' DB funcs"""
+
+    def setUp(self):
+        mkdir(TEST_DIR)
+        db.settings.data_path = TEST_DIR
+        self.conn = db._connect(path.join(TEST_DIR,TEST_DB),True)
+        self.conn.execute(TEST_TABLESQL)
+
+    def test_insert_record(self):
+        db.insert_record(TEST_DB,TEST_TABLE,col1=123,col2='abc')
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM `%s`" % TEST_TABLE)
+        res = c.fetchone()
+        self.assertEqual(res, (123,'abc'))
 
     def tearDown(self):
         self.conn.close()
