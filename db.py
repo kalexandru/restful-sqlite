@@ -144,7 +144,7 @@ def update_record(database,table,rowid,**kwargs):
     # Connect to database and return new record's ID
     conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
-    cursor.execute(statement,rowid)
+    cursor.execute(statement,(rowid,))
     cursor.close()
     conn.commit()
     conn.close()
