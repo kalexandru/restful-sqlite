@@ -12,7 +12,7 @@ class NoSuchDatabase(Exception):
 
 
 class NoSuchTable(Exception):
-        pass
+    pass
 
 
 def _sanitize(name):
