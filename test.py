@@ -138,7 +138,14 @@ class TestDBWriteFuncs(unittest.TestCase):
         db.update_record(TEST_DB,TEST_TABLE,id,col2='def')
         res = db.get_record(TEST_DB,TEST_TABLE,1)
         self.assertEqual(res, {'rowid':id,'col1':123,'col2':'def'})
-        
+
+    def test_replace_record(self):
+        # TODO: define behavior for when a record does not exist
+        id = db.insert_record(TEST_DB,TEST_TABLE,col1=123,col2='abc')
+        db.replace_record(TEST_DB,TEST_TABLE,id,[555,'def'])
+        res = db.get_record(TEST_DB,TEST_TABLE,id)
+        self.assertEqual(res, {'rowid':id,'col1':555,'col2':'def'})
+
     def tearDown(self):
         if self.conn:
             self.conn.close()
