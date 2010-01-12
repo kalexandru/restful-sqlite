@@ -159,7 +159,7 @@ def delete_record(database,table,rowid):
     conn = _connect(path.join(settings.data_path,database))
     cursor = conn.cursor()
     cursor.execute("""DELETE FROM `%s` WHERE ROWID=?""" %
-        _sanitize(table), rowid)
+        _sanitize(table), (rowid,))
     cursor.close()
     conn.commit()
     conn.close()
